@@ -1,157 +1,133 @@
-#include "header.h"
 
+#include "pacman.h"
 
+	// set game map
+int map[22][19] = {
+	{2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2},
+	{2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,2},
+	{2,4,2,2,1,2,2,2,1,2,1,2,2,2,1,2,2,4,2},
+	{2,1,2,2,1,2,2,2,1,2,1,2,2,2,1,2,2,1,2},
+	{2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2},
+	{2,1,2,2,1,2,1,2,2,2,2,2,1,2,1,2,2,1,2},
+	{2,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,1,2},
+	{2,2,2,2,1,2,2,2,0,2,0,2,2,2,1,2,2,2,2},
+	{0,0,0,2,1,2,0,0,0,0,0,0,0,2,1,2,0,0,0},
+	{2,2,2,2,1,2,0,2,2,0,2,2,0,2,1,2,2,2,2},
+	{0,0,0,0,1,0,0,2,0,0,0,2,0,0,1,0,0,0,0},
+	{2,2,2,2,1,2,0,2,2,2,2,2,0,2,1,2,2,2,2},
+	{0,0,0,2,1,2,0,0,0,0,0,0,0,2,1,2,0,0,0},
+	{2,2,2,2,1,2,0,2,2,2,2,2,0,2,1,2,2,2,2},
+	{2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,2},
+	{2,1,2,2,1,2,2,2,1,2,1,2,2,2,1,2,2,1,2},
+	{2,4,1,2,1,1,1,1,1,1,1,1,1,1,1,2,1,4,2},
+	{2,2,1,2,1,2,1,2,2,2,2,2,1,2,1,2,1,2,2},
+	{2,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,1,2},
+	{2,1,2,2,2,2,2,2,1,2,1,2,2,2,2,2,2,1,2},
+	{2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2},
+	{2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2}};
 
-SDL_Rect cor={24,25};
-int quit=no;
-
-SDL_Surface *load_image( char filename[] )
+static void	initDefault(t_pacman *pacman, int *stop)
 {
-    //Temporary storage for the image that's loaded
-    SDL_Surface* loadedImage = NULL;
-
-    //The optimized image that will be used
-    SDL_Surface* optimizedImage = NULL;
-    //Load the image
-    char file[]="sprites/";
-    strcat(file,filename);
-
-    loadedImage = IMG_Load( file);
-    //If nothing went wrong in loading the image
-    if( loadedImage != NULL )
-    {
-        //Create an optimized image
-        optimizedImage = SDL_DisplayFormat( loadedImage );
-
-        //Free the old image
-        SDL_FreeSurface( loadedImage );
-    }
-     //Return the optimized image
-    return optimizedImage;
+	// read textures and set beginning positions of ghosts/pacman
+	*stop = 0;
+	pacman->pause = 0;
+	pacman->score = 0;
+	pacman->eat = 0;
+	pacman->pacMove = (t_pos){0, 0};
+	
+	pacman->pac = (t_pos){17, 20};
+	pacman->ghostRed = (t_pos){6, 8};
+	pacman->ghostYellow = (t_pos){10, 10};
+	pacman->ghostBlue = (t_pos){1, 4};
+	pacman->ghostPink = (t_pos){16, 4};
+	pacman->pacmanLives = 3;
+	
+	pacman->pacImage = IMG_Load("image/pacman.png");
+	pacman->pacImageUp = IMG_Load("image/pacmanUp.png");
+	pacman->pacImageDown = IMG_Load("image/pacmanDown.png");
+	pacman->pacImageLeft = IMG_Load("image/pacmanLeft.png");
+	pacman->pacImageRight = IMG_Load("image/pacmanRight.png");
+	pacman->pacTexture = SDL_CreateTextureFromSurface(pacman->sdl.renderer, pacman->pacImageLeft);
+	
+	pacman->ghostRedImage = IMG_Load("image/red.png");
+	pacman->ghostRedTexture = SDL_CreateTextureFromSurface(pacman->sdl.renderer, pacman->ghostRedImage);
+	
+	pacman->ghostBlueImage = IMG_Load("image/blue.png");
+	pacman->ghostBlueTexture = SDL_CreateTextureFromSurface(pacman->sdl.renderer, pacman->ghostBlueImage);
+	
+	pacman->ghostYellowImage = IMG_Load("image/yellow.png");
+	pacman->ghostYellowTexture = SDL_CreateTextureFromSurface(pacman->sdl.renderer, pacman->ghostYellowImage);
+	
+	pacman->ghostPinkImage = IMG_Load("image/pink.png");
+	pacman->ghostPinkTexture = SDL_CreateTextureFromSurface(pacman->sdl.renderer, pacman->ghostPinkImage);
+	
+	pacman->ghostEatImage = IMG_Load("image/ghost.png");
+	pacman->ghostEatTexture = SDL_CreateTextureFromSurface(pacman->sdl.renderer, pacman->ghostEatImage);
+	
+	pacman->buttonImage = IMG_Load("image/button.png");
+	pacman->buttonTexture = SDL_CreateTextureFromSurface(pacman->sdl.renderer, pacman->buttonImage);
 }
 
-
-
-int main(int argc, char *argv[])
+int main(void)
 {
-    SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_Surface* screen;
-    screen=SDL_SetVideoMode(500,350,32,SDL_SWSURFACE);
-    SDL_Surface* bg=load_image("dark.jpg");
-    int key_press;
-    SDL_WM_SetIcon(IMG_Load("pacman_16X16.png"), NULL);
-    SDL_WM_SetCaption("Pacman","pacman_16X16.png");
+	int			stop;
+	t_pacman	*pacman;
+	static int	ghostOffset = 0;
+	int			introOff = 0;
 
-    SDL_Event event;
-    extern int quit;
-
-    SDL_BlitSurface(bg,NULL,screen,NULL);
-  // build_map(screen);
-    gameplay(screen);
-
-
-
-    return 0;
-}
-
-
-
-
-
-
-void pacman_sprites(SDL_Rect location,int direction,SDL_Surface* screen,char comp[20][12])
-{
-
-
-
-    SDL_Rect char_up,char_down,char_left,char_right,char_neutral,char_dead;
-//definition of sprites
-    char_up.x=0; char_up.y=20;  char_up.w=20;  char_up.h=20;
-    char_down.x=20; char_down.y=20;  char_down.w=20;  char_down.h=20;
-    char_left.x=20; char_left.y=0;  char_left.w=20;  char_left.h=20;
-    char_right.x=40; char_right.y=0;  char_right.w=20;  char_right.h=20;
-    char_neutral.x=0; char_neutral.y=0;  char_neutral.w=20;  char_neutral.h=20;
-    char_dead.x=40; char_dead.y=20;  char_dead.w=20;  char_dead.h=20;
-// end def of sprites
-    SDL_Surface *one,*two;
-    one=load_image("pacman.gif");
-    two=load_image("pacman_follow.gif");
-
-    if  (legibility(comp,&direction)==yes)
-    {
-        moveit(direction); // it just changes  the co-ordinates.....doesnt animate sprites
-    switch(direction)
-    {
-        case SDLK_UP:
-        SDL_BlitSurface(one,&char_up,screen,&location);
-        SDL_Flip(screen);
-        break;
-        case SDLK_DOWN:
-        SDL_BlitSurface(one,&char_down,screen,&location);
-        SDL_Flip(screen);
-         break;
-        case SDLK_RIGHT:
-        SDL_BlitSurface(one,&char_right,screen,&location);
-        SDL_Flip(screen);
-        break;
-        case SDLK_LEFT:
-        SDL_BlitSurface(one,&char_left,screen,&location);
-        SDL_Flip(screen);
-        break;
-    }
-
-
-    SDL_Delay(75);
-    SDL_BlitSurface(one,&char_neutral,screen,&location);
-    SDL_Flip(screen);
-
-
-    SDL_Delay(75);
-    SDL_BlitSurface(two,NULL,screen,&location);
-    SDL_Flip(screen);
-    }
-    else
-    {
-        //SDL_Delay(1000);
-        SDL_BlitSurface(one,&char_neutral,screen,&location);
-        SDL_Flip(screen);
-    }
-
-
-
-    SDL_FreeSurface(one);
-    SDL_FreeSurface(two);
-
-}
-
-
-
-void gameplay(SDL_Surface* screen)
-{
-
-    extern int quit;
-    char comp[20][12];
-    extern SDL_Rect cor;
-    SDL_Event event;
-    int key_press;
-
-
-
-    createmap(screen,comp);
-
-    while (quit==no)
-    {
-           while(SDL_PollEvent(&event))
-           {
-
-                if(event.type==SDL_QUIT) quit=yes;
-                if (event.type==SDL_KEYDOWN)   key_press=event.key.keysym.sym;
-            }
-
-
-
-
-            pacman_sprites(cor,key_press,screen,comp);
-
-    }
+	pacman = (t_pacman *)malloc(sizeof(t_pacman));
+	sdlInit(pacman);
+	initDefault(pacman, &stop);
+	
+	while (!stop)
+	{
+		while (SDL_PollEvent(&(pacman->sdl.e)))
+		{
+			if (pacman->sdl.e.type == SDL_QUIT || pacman->sdl.e.key.keysym.sym == SDLK_ESCAPE)
+				stop = 1;
+			else if (pacman->sdl.e.type == SDL_KEYUP)
+			{
+				if (pacman->sdl.e.key.keysym.sym == SDLK_SPACE)
+				{
+					putTextMessage(pacman, "Pause");
+					pacman->pause = (pacman->pause == 1) ? 0 : 1;
+				}
+				else if (pacman->sdl.e.key.keysym.sym == SDLK_UP)
+					pacman->pacMove = (t_pos){0, -1};
+				else if (pacman->sdl.e.key.keysym.sym == SDLK_DOWN)
+					pacman->pacMove = (t_pos){0, 1};
+				else if (pacman->sdl.e.key.keysym.sym == SDLK_RIGHT)
+					pacman->pacMove = (t_pos){1, 0};
+				else if (pacman->sdl.e.key.keysym.sym == SDLK_LEFT)
+					pacman->pacMove = (t_pos){-1, 0};
+			}
+		}
+		if (introOff == 0)
+			intro(pacman, &introOff);
+		if (pacman->pause == 0)
+		{
+			sdlRenderClear(pacman);
+			putPacman(pacman);
+			drawMap(pacman);
+			if (ghostOffset % 2)
+			{
+				putGhostRed(pacman);
+				putGhostYellow(pacman);
+				ghostOffset = 0;
+			}
+			else
+			{
+				putGhostBlue(pacman);
+				putGhostPink(pacman);
+				ghostOffset = 1;
+			}
+			if (pacman->eat != 0)
+				pacman->eat--;
+			SDL_RenderPresent(pacman->sdl.renderer);
+			SDL_Delay(250);
+		}
+		
+	}
+	sdlDestroy(pacman);
+	return 0;
 }
