@@ -1,1 +1,1 @@
-
+[![Git Inspector](https://github.com/MoosaramthotaNandini/stepin_PacmanGame/actions/workflows/git_inspector.yml/badge.svg)](https://github.com/MoosaramthotaNandini/stepin_PacmanGame/actions/workflows/git_inspector.yml)
